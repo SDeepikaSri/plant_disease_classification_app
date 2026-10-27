@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Plant Disease Detection</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family:
+                Inter,
+                Arial,
+                Helvetica,
+                sans-serif;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #f4f7f3,
+                    #e8efe8
+                );
+
+            color: #18251c;
+        }
+
+        .header {
+            padding: 28px 55px;
+
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            background: rgba(
+                255,
+                255,
+                255,
+                0.82
+            );
+
+            border-bottom:
+                1px solid #dce5dd;
+
+            backdrop-filter: blur(10px);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .brand-icon {
+            width: 48px;
+            height: 48px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 14px;
+
+            background: #1f6b3b;
+
+            color: white;
+
+            font-size: 25px;
+        }
+
+        .brand h1 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 750;
+        }
+
+        .brand p {
+            margin: 4px 0 0;
+            color: #718077;
+            font-size: 13px;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+
+            font-size: 13px;
+            color: #526158;
+        }
+
+        .status-dot {
+            width: 9px;
+            height: 9px;
+
+            border-radius: 50%;
+
+            background: #2d8b4b;
+        }
+
+        .main {
+            max-width: 1450px;
+
+            margin: 0 auto;
+
+            padding: 42px 45px;
+        }
+
+        .title {
+            margin-bottom: 28px;
+        }
+
+        .title h2 {
+            margin: 0;
+
+            font-size: 32px;
+
+            letter-spacing: -0.7px;
+        }
+
+        .title p {
+            margin: 9px 0 0;
+
+            color: #68766d;
+
+            font-size: 15px;
+        }
+
+        .workspace {
+            display: grid;
+
+            grid-template-columns:
+                minmax(330px, 0.85fr)
+                minmax(500px, 1.45fr);
+
+            gap: 25px;
+        }
+
+        .panel {
+            background: rgba(
+                255,
+                255,
+                255,
+                0.88
+            );
+
+            border:
+                1px solid #dfe7e0;
+
+            border-radius: 22px;
+
+            box-shadow:
+                0 15px 45px
+                rgba(
+                    40,
+                    65,
+                    48,
+                    0.08
+                );
+
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 23px 25px 16px;
+
+            border-bottom:
+                1px solid #edf1ee;
+        }
+
+        .panel-header h3 {
+            margin: 0;
+
+            font-size: 17px;
+        }
+
+        .panel-header span {
+            display: block;
+
+            margin-top: 5px;
+
+            color: #78857c;
+
+            font-size: 12px;
+        }
+
+        .upload-panel {
+            min-height: 570px;
+
+            display: flex;
+            flex-direction: column;
+        }
+
+        .upload-area {
+            margin: 25px;
+
+            flex: 1;
+
+            min-height: 380px;
+
+            border:
+                2px dashed #c8d5cb;
+
+            border-radius: 18px;
+
+            display: flex;
+            flex-direction: column;
+
+            align-items: center;
+            justify-content: center;
+
+            padding: 30px;
+
+            text-align: center;
+
+            cursor: pointer;
+
+            transition:
+                border-color .2s,
+                background .2s,
+                transform .2s;
+        }
+
+        .upload-area:hover {
+            border-color: #43845b;
+
+            background: #f7faf7;
+        }
+
+        .upload-area.dragover {
+            border-color: #1f6b3b;
+
+            background: #eef7f0;
+
+            transform: scale(1.01);
+        }
+
+        .upload-icon {
+            width: 75px;
+            height: 75px;
+
+            border-radius: 20px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            background: #edf6ef;
+
+            color: #2f7748;
+
+            font-size: 32px;
+
+            margin-bottom: 20px;
+        }
+
+        .upload-area h3 {
+            margin: 0 0 8px;
+
+            font-size: 17px;
+        }
+
+        .upload-area p {
+            margin: 0;
+
+            color: #7b887f;
+
+            font-size: 13px;
+
+            line-height: 1.6;
+        }
+
+        .browse {
+            margin-top: 19px;
+
+            padding: 11px 22px;
+
+            border-radius: 10px;
+
+            background: #1f6b3b;
+
+            color: white;
+
+            font-weight: 650;
+
+            font-size: 13px;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .preview {
+            display: none;
+
+            margin: 0 25px 25px;
+
+            border-radius: 15px;
+
+            overflow: hidden;
+
+            border: 1px solid #e0e7e1;
+        }
+
+        .preview img {
+            width: 100%;
+
+            height: 210px;
+
+            object-fit: contain;
+
+            background: #f5f6f5;
+        }
+
+        .analyze-btn {
+            margin: 0 25px 25px;
+
+            border: none;
+
+            border-radius: 12px;
+
+            padding: 15px;
+
+            background: #1f6b3b;
+
+            color: white;
+
+            font-size: 14px;
+
+            font-weight: 700;
+
+            cursor: pointer;
+
+            transition:
+                background .2s,
+                transform .15s;
+        }
+
+        .analyze-btn:hover {
+            background: #18562f;
+
+            transform: translateY(-1px);
+        }
+
+        .analyze-btn:disabled {
+            opacity: 0.55;
+
+            cursor: not-allowed;
+
+            transform: none;
+        }
+
+        .result-panel {
+            min-height: 570px;
+        }
+
+        .result-content {
+            padding: 25px;
+        }
+
+        .empty-state {
+            min-height: 470px;
+
+            display: flex;
+
+            flex-direction: column;
+
+            align-items: center;
+
+            justify-content: center;
+
+            text-align: center;
+
+            color: #839087;
+        }
+
+        .empty-icon {
+            font-size: 52px;
+
+            margin-bottom: 18px;
+
+            opacity: 0.65;
+        }
+
+        .empty-state h3 {
+            margin: 0 0 7px;
+
+            color: #526158;
+
+            font-size: 17px;
+        }
+
+        .empty-state p {
+            max-width: 390px;
+
+            margin: 0;
+
+            font-size: 13px;
+
+            line-height: 1.6;
+        }
+
+        .prediction-card {
+            display: none;
+        }
+
+        .prediction-label {
+            color: #78857c;
+
+            font-size: 11px;
+
+            font-weight: 700;
+
+            text-transform: uppercase;
+
+            letter-spacing: 1px;
+        }
+
+        .prediction-name {
+            margin-top: 5px;
+
+            font-size: 29px;
+
+            line-height: 1.2;
+
+            font-weight: 780;
+
+            color: #1c5e35;
+        }
+
+        .prediction-details {
+            display: flex;
+
+            gap: 10px;
+
+            margin-top: 13px;
+
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            padding: 7px 12px;
+
+            border-radius: 20px;
+
+            background: #edf6ef;
+
+            color: #2c7044;
+
+            font-size: 12px;
+
+            font-weight: 650;
+        }
+
+        .confidence {
+            margin-top: 18px;
+        }
+
+        .confidence-top {
+            display: flex;
+
+            justify-content: space-between;
+
+            margin-bottom: 7px;
+
+            font-size: 12px;
+
+            color: #69766e;
+        }
+
+        .confidence-value {
+            font-weight: 750;
+
+            color: #1d5d35;
+        }
+
+        .confidence-bar {
+            width: 100%;
+
+            height: 8px;
+
+            border-radius: 10px;
+
+            overflow: hidden;
+
+            background: #e7ece8;
+        }
+
+        .confidence-fill {
+            height: 100%;
+
+            width: 0%;
+
+            background: #2f7d49;
+
+            border-radius: 10px;
+
+            transition: width .6s ease;
+        }
+
+        .xai-title {
+            margin-top: 27px;
+
+            margin-bottom: 13px;
+
+            font-size: 13px;
+
+            font-weight: 750;
+
+            color: #35433a;
+        }
+
+        .xai-image {
+            width: 100%;
+
+            border-radius: 15px;
+
+            border: 1px solid #dce5de;
+
+            background: #f4f5f4;
+
+            display: block;
+        }
+
+        .image-description {
+            margin-top: 9px;
+
+            color: #7a877e;
+
+            font-size: 11px;
+
+            line-height: 1.5;
+        }
+
+        .loading {
+            display: none;
+
+            align-items: center;
+
+            justify-content: center;
+
+            gap: 10px;
+
+            padding: 25px;
+
+            color: #55705d;
+
+            font-size: 13px;
+        }
+
+        .spinner {
+            width: 18px;
+            height: 18px;
+
+            border:
+                2px solid #d4e1d7;
+
+            border-top-color: #2f7847;
+
+            border-radius: 50%;
+
+            animation:
+                spin .7s linear infinite;
+        }
+
+        @keyframes spin {
+
+            to {
+                transform: rotate(360deg);
+            }
+
+        }
+
+        .error {
+            display: none;
+
+            margin-top: 15px;
+
+            padding: 12px 14px;
+
+            border-radius: 10px;
+
+            background: #fff1f0;
+
+            border: 1px solid #f2d4d1;
+
+            color: #a13e35;
+
+            font-size: 12px;
+
+            line-height: 1.5;
+        }
+
+        .footer {
+            text-align: center;
+
+            padding: 10px 20px 35px;
+
+            color: #8a958d;
+
+            font-size: 11px;
+        }
+
+        @media (max-width: 950px) {
+
+            .workspace {
+                grid-template-columns: 1fr;
+            }
+
+            .upload-panel,
+            .result-panel {
+                min-height: auto;
+            }
+
+            .upload-area {
+                min-height: 300px;
+            }
+
+        }
+
+        @media (max-width: 600px) {
+
+            .header {
+                padding: 20px;
+            }
+
+            .main {
+                padding: 25px 15px;
+            }
+
+            .title h2 {
+                font-size: 25px;
+            }
+
+            .prediction-name {
+                font-size: 23px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+    <header class="header">
+
+        <div class="brand">
+
+            <div class="brand-icon">
+                🌿
+            </div>
+
+            <div>
+
+                <h1>
+                    PlantDoc AI
+                </h1>
+
+                <p>
+                    Plant Disease Detection & Explainable AI
+                </p>
+
+            </div>
+
+        </div>
+
+        <div class="status">
+
+            <div class="status-dot"></div>
+
+            Model Ready
+
+        </div>
+
+    </header>
+
+
+    <main class="main">
+
+        <div class="title">
+
+            <h2>
+                Plant Disease Analysis
+            </h2>
+
+            <p>
+                Upload a plant leaf image to identify the disease
+                and visualize the regions influencing the prediction.
+            </p>
+
+        </div>
+
+
+        <div class="workspace">
+
+
+            <!-- ==================================================
+                 LEFT PANEL
+                 ================================================== -->
+
+            <section class="panel upload-panel">
+
+                <div class="panel-header">
+
+                    <h3>
+                        Upload Image
+                    </h3>
+
+                    <span>
+                        Supported formats: JPG, PNG, WEBP, BMP
+                    </span>
+
+                </div>
+
+
+                <div
+                    class="upload-area"
+                    id="uploadArea"
+                >
+
+                    <div class="upload-icon">
+                        ↑
+                    </div>
+
+                    <h3>
+                        Drop your leaf image here
+                    </h3>
+
+                    <p>
+                        Drag and drop an image here<br>
+                        or select an image from your computer
+                    </p>
+
+                    <div class="browse">
+                        Browse Image
+                    </div>
+
+                    <input
+                        type="file"
+                        id="fileInput"
+                        accept=".jpg,.jpeg,.png,.webp,.bmp,image/*"
+                    >
+
+                </div>
+
+
+                <div
+                    class="preview"
+                    id="preview"
+                >
+
+                    <img
+                        id="previewImage"
+                        alt="Selected plant image"
+                    >
+
+                </div>
+
+
+                <button
+                    class="analyze-btn"
+                    id="analyzeButton"
+                    disabled
+                >
+                    Analyze Leaf
+                </button>
+
+
+                <div
+                    class="error"
+                    id="errorBox"
+                ></div>
+
+            </section>
+
+
+            <!-- ==================================================
+                 RIGHT PANEL
+                 ================================================== -->
+
+            <section class="panel result-panel">
+
+                <div class="panel-header">
+
+                    <h3>
+                        Analysis Result
+                    </h3>
+
+                    <span>
+                        Prediction and Grad-CAM explanation
+                    </span>
+
+                </div>
+
+
+                <div class="result-content">
+
+
+                    <div
+                        class="empty-state"
+                        id="emptyState"
+                    >
+
+                        <div class="empty-icon">
+                            🔬
+                        </div>
+
+                        <h3>
+                            No analysis yet
+                        </h3>
+
+                        <p>
+                            Upload a leaf image and click
+                            <b>Analyze Leaf</b> to obtain the
+                            predicted plant disease and its
+                            Grad-CAM visualization.
+                        </p>
+
+                    </div>
+
+
+                    <div
+                        class="loading"
+                        id="loading"
+                    >
+
+                        <div class="spinner"></div>
+
+                        Analyzing image...
+
+                    </div>
+
+
+                    <div
+                        class="prediction-card"
+                        id="predictionCard"
+                    >
+
+                        <div class="prediction-label">
+                            Predicted Class
+                        </div>
+
+                        <div
+                            class="prediction-name"
+                            id="predictionName"
+                        >
+                        </div>
+
+
+                        <div class="prediction-details">
+
+                            <div
+                                class="badge"
+                                id="speciesBadge"
+                            >
+                            </div>
+
+                            <div
+                                class="badge"
+                                id="diseaseBadge"
+                            >
+                            </div>
+
+                        </div>
+
+
+                        <div class="confidence">
+
+                            <div class="confidence-top">
+
+                                <span>
+                                    Model Confidence
+                                </span>
+
+                                <span
+                                    class="confidence-value"
+                                    id="confidenceText"
+                                >
+                                    0%
+                                </span>
+
+                            </div>
+
+                            <div class="confidence-bar">
+
+                                <div
+                                    class="confidence-fill"
+                                    id="confidenceFill"
+                                >
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="xai-title">
+                            Grad-CAM Disease Region
+                        </div>
+
+                        <img
+                            class="xai-image"
+                            id="regionImage"
+                            alt="Highlighted disease regions"
+                        >
+
+                        <div class="image-description">
+                            Highlighted contours indicate the image
+                            regions contributing most strongly to
+                            the predicted class.
+                        </div>
+
+
+                        <div class="xai-title">
+                            Grad-CAM Heatmap
+                        </div>
+
+                        <img
+                            class="xai-image"
+                            id="gradcamImage"
+                            alt="Grad-CAM visualization"
+                        >
+
+                    </div>
+
+                </div>
+
+            </section>
+
+        </div>
+
+    </main>
+
+
+    <div class="footer">
+
+        PlantDoc 27-Class Classification · EfficientNet-B4 · Grad-CAM
+
+    </div>
+
+
+    <script>
+
+        const uploadArea =
+            document.getElementById("uploadArea");
+
+        const fileInput =
+            document.getElementById("fileInput");
+
+        const preview =
+            document.getElementById("preview");
+
+        const previewImage =
+            document.getElementById("previewImage");
+
+        const analyzeButton =
+            document.getElementById("analyzeButton");
+
+        const emptyState =
+            document.getElementById("emptyState");
+
+        const predictionCard =
+            document.getElementById("predictionCard");
+
+        const loading =
+            document.getElementById("loading");
+
+        const errorBox =
+            document.getElementById("errorBox");
+
+        const predictionName =
+            document.getElementById("predictionName");
+
+        const speciesBadge =
+            document.getElementById("speciesBadge");
+
+        const diseaseBadge =
+            document.getElementById("diseaseBadge");
+
+        const confidenceText =
+            document.getElementById("confidenceText");
+
+        const confidenceFill =
+            document.getElementById("confidenceFill");
+
+        const regionImage =
+            document.getElementById("regionImage");
+
+        const gradcamImage =
+            document.getElementById("gradcamImage");
+
+
+        let selectedFile = null;
+
+
+        // ======================================================
+        // FILE SELECTION
+        // ======================================================
+
+        uploadArea.addEventListener(
+            "click",
+            () => {
+
+                fileInput.click();
+
+            }
+        );
+
+
+        fileInput.addEventListener(
+            "change",
+            () => {
+
+                if (
+                    fileInput.files &&
+                    fileInput.files.length > 0
+                ) {
+
+                    selectFile(
+                        fileInput.files[0]
+                    );
+
+                }
+
+            }
+        );
+
+
+        // ======================================================
+        // DRAG AND DROP
+        // ======================================================
+
+        uploadArea.addEventListener(
+            "dragover",
+            (event) => {
+
+                event.preventDefault();
+
+                uploadArea.classList.add(
+                    "dragover"
+                );
+
+            }
+        );
+
+
+        uploadArea.addEventListener(
+            "dragleave",
+            () => {
+
+                uploadArea.classList.remove(
+                    "dragover"
+                );
+
+            }
+        );
+
+
+        uploadArea.addEventListener(
+            "drop",
+            (event) => {
+
+                event.preventDefault();
+
+                uploadArea.classList.remove(
+                    "dragover"
+                );
+
+                const files =
+                    event.dataTransfer.files;
+
+                if (
+                    files &&
+                    files.length > 0
+                ) {
+
+                    selectFile(
+                        files[0]
+                    );
+
+                }
+
+            }
+        );
+
+
+        // ======================================================
+        // SELECT FILE
+        // ======================================================
+
+        function selectFile(file) {
+
+            if (!file.type.startsWith("image/")) {
+
+                showError(
+                    "Please select a valid image file."
+                );
+
+                return;
+
+            }
+
+            selectedFile = file;
+
+            const reader =
+                new FileReader();
+
+            reader.onload = function(event) {
+
+                previewImage.src =
+                    event.target.result;
+
+                preview.style.display =
+                    "block";
+
+            };
+
+            reader.readAsDataURL(file);
+
+            analyzeButton.disabled =
+                false;
+
+            hideError();
+
+        }
+
+
+        // ======================================================
+        // ANALYZE
+        // ======================================================
+
+        analyzeButton.addEventListener(
+            "click",
+            analyzeImage
+        );
+
+
+        async function analyzeImage() {
+
+            if (!selectedFile) {
+
+                showError(
+                    "Please select an image first."
+                );
+
+                return;
+
+            }
+
+            hideError();
+
+            analyzeButton.disabled =
+                true;
+
+            emptyState.style.display =
+                "none";
+
+            predictionCard.style.display =
+                "none";
+
+            loading.style.display =
+                "flex";
+
+
+            const formData =
+                new FormData();
+
+            formData.append(
+                "file",
+                selectedFile
+            );
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        "/api/predict",
+                        {
+                            method: "POST",
+                            body: formData
+                        }
+                    );
+
+
+                const data =
+                    await response.json();
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        data.detail ||
+                        "Prediction failed."
+                    );
+
+                }
+
+
+                // ==============================================
+                // PREDICTION
+                // ==============================================
+
+                predictionName.textContent =
+                    data.prediction;
+
+
+                speciesBadge.textContent =
+                    "Species: " +
+                    data.species;
+
+
+                diseaseBadge.textContent =
+                    data.healthy
+                        ? "Healthy"
+                        : "Disease: " +
+                          data.disease;
+
+
+                // ==============================================
+                // CONFIDENCE
+                // ==============================================
+
+                const confidence =
+                    data.confidence * 100;
+
+
+                confidenceText.textContent =
+                    confidence.toFixed(2) +
+                    "%";
+
+
+                confidenceFill.style.width =
+                    confidence.toFixed(2) +
+                    "%";
+
+
+                // ==============================================
+                // IMAGES
+                // ==============================================
+
+                regionImage.src =
+                    data.images.regions;
+
+
+                gradcamImage.src =
+                    data.images.gradcam;
+
+
+                // ==============================================
+                // SHOW RESULT
+                // ==============================================
+
+                loading.style.display =
+                    "none";
+
+                predictionCard.style.display =
+                    "block";
+
+
+            } catch (error) {
+
+                loading.style.display =
+                    "none";
+
+                emptyState.style.display =
+                    "flex";
+
+                showError(
+                    error.message
+                );
+
+            } finally {
+
+                analyzeButton.disabled =
+                    false;
+
+            }
+
+        }
+
+
+        // ======================================================
+        // ERROR
+        // ======================================================
+
+        function showError(message) {
+
+            errorBox.textContent =
+                message;
+
+            errorBox.style.display =
+                "block";
+
+        }
+
+
+        function hideError() {
+
+            errorBox.style.display =
+                "none";
+
+        }
+
+    </script>
+
+</body>
+
+</html>
