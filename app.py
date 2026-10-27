@@ -32,10 +32,6 @@ from skimage.measure import find_contours
 import model as M
 
 
-# ============================================================
-# PATHS
-# ============================================================
-
 BASE = Path(__file__).resolve().parent
 
 MODEL_PATH = BASE / "best_model"
@@ -43,18 +39,10 @@ MODEL_PATH = BASE / "best_model"
 INDEX_PATH = BASE / "index.html"
 
 
-# ============================================================
-# DEVICE
-# ============================================================
-
 DEVICE = torch.device(
     "cuda" if torch.cuda.is_available() else "cpu"
 )
 
-
-# ============================================================
-# CONFIG
-# ============================================================
 
 DEFAULT_IMG_SIZE = 380
 
@@ -66,26 +54,14 @@ GRADCAM_ALPHA = 0.45
 
 GRADCAM_THRESHOLD_PERCENTILE = 82
 
-CONTOUR_LINEWIDTH = 2.0
-
-CONTOUR_ALPHA = 0.95
-
 MIN_REGION_AREA = 100
 
-
-# ============================================================
-# RANDOM SEED
-# ============================================================
 
 torch.manual_seed(SEED)
 
 if torch.cuda.is_available():
     torch.cuda.manual_seed_all(SEED)
 
-
-# ============================================================
-# MODEL STATE
-# ============================================================
 
 state = {
     "model": None,
@@ -98,30 +74,10 @@ state = {
 }
 
 
-# Grad-CAM uses gradients.
-# Requests are therefore serialized.
 lock = threading.Lock()
 
 
-# ============================================================
-# CHECKPOINT LOADER
-# ============================================================
-
 def load_checkpoint(path):
-    """
-    Loads either:
-
-    1. A normal .pt/.pth checkpoint
-    2. An extracted PyTorch checkpoint folder
-
-    The user's best_model folder contains:
-        data.pkl
-        data/
-        .data/
-        byteorder
-        version
-        etc.
-    """
 
     path = str(path)
 
@@ -151,7 +107,10 @@ def load_checkpoint(path):
                     relative_path = os.path.relpath(
                         full_path,
                         path
-                    ).replace(os.sep, "/")
+                    ).replace(
+                        os.sep,
+                        "/"
+                    )
 
                     archive.write(
                         full_path,
@@ -173,10 +132,6 @@ def load_checkpoint(path):
     )
 
 
-# ============================================================
-# PRETTY CLASS NAME
-# ============================================================
-
 def pretty_class(name):
 
     name = name.replace(
@@ -192,17 +147,15 @@ def pretty_class(name):
     return name.strip()
 
 
-# ============================================================
-# BASE64 IMAGE
-# ============================================================
-
 def image_to_base64(image_array):
 
     image_array = np.clip(
         image_array,
         0,
         255
-    ).astype(np.uint8)
+    ).astype(
+        np.uint8
+    )
 
     buffer = io.BytesIO()
 
@@ -221,20 +174,13 @@ def image_to_base64(image_array):
     )
 
 
-# ============================================================
-# MODEL STARTUP
-# ============================================================
-
 @asynccontextmanager
 async def lifespan(app):
 
     if not MODEL_PATH.exists():
 
         raise RuntimeError(
-            f"\nCheckpoint not found:\n"
-            f"{MODEL_PATH}\n\n"
-            f"Make sure the 'best_model' folder is "
-            f"inside the same directory as app.py."
+            f"Checkpoint not found: {MODEL_PATH}"
         )
 
     print("=" * 70)
@@ -292,10 +238,6 @@ async def lifespan(app):
             f"{best_accuracy * 100:.2f}%"
         )
 
-    # --------------------------------------------------------
-    # BUILD MODEL
-    # --------------------------------------------------------
-
     net = M.load_model_from_checkpoint(
         checkpoint
     )
@@ -303,10 +245,6 @@ async def lifespan(app):
     net = net.to(DEVICE)
 
     net.eval()
-
-    # --------------------------------------------------------
-    # SAVE STATE
-    # --------------------------------------------------------
 
     state["model"] = net
     state["classes"] = classes
@@ -323,20 +261,12 @@ async def lifespan(app):
     yield
 
 
-# ============================================================
-# FASTAPI
-# ============================================================
-
 app = FastAPI(
     title="Plant Disease Detection",
     description="PlantDoc 27-class disease detection with Grad-CAM",
     lifespan=lifespan
 )
 
-
-# ============================================================
-# PREPROCESSING
-# ============================================================
 
 def get_transform():
 
@@ -355,13 +285,13 @@ def get_transform():
     ])
 
 
-# ============================================================
-# GRAD-CAM
-# ============================================================
-
 class GradCAM:
 
-    def __init__(self, model, target_layer):
+    def __init__(
+        self,
+        model,
+        target_layer
+    ):
 
         self.model = model
 
@@ -426,7 +356,6 @@ class GradCAM:
 
         gradients = self.gradients
 
-        # Global average pooling of gradients
         weights = gradients.mean(
             dim=(2, 3),
             keepdim=True
@@ -439,7 +368,9 @@ class GradCAM:
             keepdim=True
         )
 
-        cam = F.relu(cam)
+        cam = F.relu(
+            cam
+        )
 
         cam = F.interpolate(
             cam,
@@ -456,8 +387,8 @@ class GradCAM:
             0
         ].detach().cpu().numpy()
 
-        # Normalize
         cam_min = cam.min()
+
         cam_max = cam.max()
 
         cam = (
@@ -475,10 +406,6 @@ class GradCAM:
         self.backward_handle.remove()
 
 
-# ============================================================
-# GRAD-CAM TARGET LAYER
-# ============================================================
-
 def create_gradcam():
 
     model = state["model"]
@@ -491,16 +418,11 @@ def create_gradcam():
     )
 
 
-# ============================================================
-# DISEASE REGION EXTRACTION
-# ============================================================
-
 def create_disease_regions(
     original,
     heatmap
 ):
 
-    # Ignore very weak activation.
     positive = heatmap[
         heatmap > 0
     ]
@@ -519,13 +441,11 @@ def create_disease_regions(
 
     mask = heatmap >= threshold
 
-    # Smooth the activation region.
     mask = gaussian_filter(
         mask.astype(np.float32),
         sigma=2.0
     ) > 0.35
 
-    # Join nearby regions.
     mask = binary_closing(
         mask,
         structure=np.ones(
@@ -534,13 +454,13 @@ def create_disease_regions(
         )
     )
 
-    # Fill small holes.
     mask = binary_fill_holes(
         mask
     )
 
-    # Remove tiny regions.
-    labeled, count = label(mask)
+    labeled, count = label(
+        mask
+    )
 
     cleaned = np.zeros_like(
         mask,
@@ -562,10 +482,6 @@ def create_disease_regions(
 
     return cleaned
 
-
-# ============================================================
-# CREATE GRAD-CAM IMAGE
-# ============================================================
 
 def create_gradcam_image(
     original,
@@ -597,10 +513,6 @@ def create_gradcam_image(
     )
 
 
-# ============================================================
-# CREATE CIRCLED DISEASE IMAGE
-# ============================================================
-
 def create_region_image(
     original,
     heatmap
@@ -611,14 +523,9 @@ def create_region_image(
         heatmap
     )
 
-    result = (
-        original.copy()
-    )
+    result = original.copy()
 
-    # Slightly fade outside highlighted regions.
-    faded = (
-        result * 0.72
-    )
+    faded = result * 0.72
 
     result[
         ~region_mask
@@ -626,7 +533,6 @@ def create_region_image(
         ~region_mask
     ]
 
-    # Draw natural contours.
     contours = find_contours(
         region_mask.astype(
             np.float32
@@ -640,7 +546,6 @@ def create_region_image(
 
             continue
 
-        # Smooth contour.
         y = gaussian_filter(
             contour[:, 0],
             sigma=1.2
@@ -651,7 +556,6 @@ def create_region_image(
             sigma=1.2
         )
 
-        # Draw yellow contour.
         for offset in range(-1, 2):
 
             yy = np.clip(
@@ -679,19 +583,15 @@ def create_region_image(
     )
 
 
-# ============================================================
-# PREDICTION
-# ============================================================
-
-def predict_image(
-    image
-):
+def predict_image(image):
 
     transform = get_transform()
 
     tensor = transform(
         image
-    ).unsqueeze(0).to(
+    ).unsqueeze(
+        0
+    ).to(
         DEVICE
     )
 
@@ -734,10 +634,6 @@ def predict_image(
     )
 
 
-# ============================================================
-# API HEALTH
-# ============================================================
-
 @app.get("/api/health")
 def health():
 
@@ -753,18 +649,10 @@ def health():
     }
 
 
-# ============================================================
-# PREDICT API
-# ============================================================
-
 @app.post("/api/predict")
 async def predict(
     file: UploadFile = File(...)
 ):
-
-    # --------------------------------------------------------
-    # CHECK FILE
-    # --------------------------------------------------------
 
     if not file.content_type:
 
@@ -790,10 +678,6 @@ async def predict(
             )
         )
 
-    # --------------------------------------------------------
-    # READ FILE
-    # --------------------------------------------------------
-
     data = await file.read()
 
     if len(data) > MAX_BYTES:
@@ -802,10 +686,6 @@ async def predict(
             status_code=413,
             detail="Image must be smaller than 15 MB."
         )
-
-    # --------------------------------------------------------
-    # OPEN IMAGE
-    # --------------------------------------------------------
 
     try:
 
@@ -829,10 +709,6 @@ async def predict(
             )
         )
 
-    # --------------------------------------------------------
-    # ORIGINAL IMAGE
-    # --------------------------------------------------------
-
     original = image.resize(
         (
             state["img_size"],
@@ -850,10 +726,6 @@ async def predict(
 
     start = time.time()
 
-    # --------------------------------------------------------
-    # PREDICTION + GRAD-CAM
-    # --------------------------------------------------------
-
     with lock:
 
         tensor, pred_index, confidence, probabilities = (
@@ -866,7 +738,6 @@ async def predict(
 
         try:
 
-            # Grad-CAM needs gradients.
             with torch.enable_grad():
 
                 heatmap = gradcam.generate(
@@ -878,10 +749,6 @@ async def predict(
 
             gradcam.close()
 
-    # --------------------------------------------------------
-    # CLASS
-    # --------------------------------------------------------
-
     classes = state["classes"]
 
     predicted_class = classes[
@@ -891,10 +758,6 @@ async def predict(
     pretty_prediction = pretty_class(
         predicted_class
     )
-
-    # --------------------------------------------------------
-    # SPECIES / DISEASE
-    # --------------------------------------------------------
 
     if predicted_class in M.CLASS_TO_SD:
 
@@ -917,10 +780,6 @@ async def predict(
         disease
     )
 
-    # --------------------------------------------------------
-    # TOP 5
-    # --------------------------------------------------------
-
     top_indices = np.argsort(
         -probabilities
     )[:5]
@@ -938,10 +797,6 @@ async def predict(
             )
         })
 
-    # --------------------------------------------------------
-    # CREATE VISUALS
-    # --------------------------------------------------------
-
     gradcam_image = create_gradcam_image(
         original_array,
         heatmap
@@ -958,57 +813,36 @@ async def predict(
         np.uint8
     )
 
-    # --------------------------------------------------------
-    # RESPONSE
-    # --------------------------------------------------------
-
     elapsed = int(
         (time.time() - start) * 1000
     )
 
     return {
         "success": True,
-
         "prediction": pretty_prediction,
-
         "class_id": predicted_class,
-
         "species": pretty_species,
-
         "disease": pretty_disease,
-
         "healthy": (
             disease.lower() == "healthy"
         ),
-
         "confidence": confidence,
-
         "top5": top5,
-
         "images": {
-
             "original": image_to_base64(
                 original_image
             ),
-
             "gradcam": image_to_base64(
                 gradcam_image
             ),
-
             "regions": image_to_base64(
                 region_image
             )
         },
-
         "elapsed_ms": elapsed,
-
         "device": str(DEVICE)
     }
 
-
-# ============================================================
-# FRONTEND
-# ============================================================
 
 @app.get(
     "/",
@@ -1029,10 +863,6 @@ def index():
         )
     )
 
-
-# ============================================================
-# MAIN
-# ============================================================
 
 if __name__ == "__main__":
 

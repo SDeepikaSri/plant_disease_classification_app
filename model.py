@@ -79,7 +79,10 @@ CLASS_TO_SD = {
 
 
 def build_model(num_classes=NUM_CLASSES):
-    model = models.efficientnet_b4(weights=None)
+
+    model = models.efficientnet_b4(
+        weights=None
+    )
 
     in_features = model.classifier[1].in_features
 
@@ -92,23 +95,38 @@ def build_model(num_classes=NUM_CLASSES):
 
 
 def load_model_from_checkpoint(checkpoint):
+
     if not isinstance(checkpoint, dict):
-        raise TypeError("Checkpoint must be a dictionary.")
+        raise TypeError(
+            "Checkpoint must be a dictionary."
+        )
 
-    num_classes = checkpoint.get("num_classes", NUM_CLASSES)
+    num_classes = checkpoint.get(
+        "num_classes",
+        NUM_CLASSES
+    )
 
-    model = build_model(num_classes)
+    model = build_model(
+        num_classes
+    )
 
-    state_dict = checkpoint["model_state_dict"]
+    state_dict = checkpoint[
+        "model_state_dict"
+    ]
 
     cleaned_state_dict = {}
 
     for key, value in state_dict.items():
+
         if key.startswith("module."):
+
             key = key[7:]
 
         cleaned_state_dict[key] = value
 
-    model.load_state_dict(cleaned_state_dict, strict=True)
+    model.load_state_dict(
+        cleaned_state_dict,
+        strict=True
+    )
 
     return model
