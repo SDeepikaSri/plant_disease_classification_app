@@ -1,10 +1,13 @@
-fastapi
-uvicorn
-python-multipart
-torch
-torchvision
-numpy
-Pillow
-matplotlib
-scipy
-scikit-image
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+torch==2.14.1+cpu
+torchvision==0.29.1+cpu
+
+fastapi==0.162.0
+uvicorn==0.54.0
+python-multipart==0.0.32
+numpy==2.5.4
+pillow==13.0.0
+matplotlib==3.11.2
+scipy==1.18.1
+scikit-image==0.26.0
