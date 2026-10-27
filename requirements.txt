@@ -1,10 +1,13 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+torch==2.4.1+cpu
+torchvision==0.19.1+cpu
+
 fastapi
 uvicorn
 python-multipart
-torch
-torchvision
 numpy
-Pillow
+pillow
 matplotlib
 scipy
 scikit-image
